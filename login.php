@@ -15,7 +15,7 @@ require_once 'includes/header.php';
       </div>
     </div>
 
-    <form action="logic/login_process.php" method="POST" class="space-y-6">
+    <form action="logic/login_code.php" method="POST" class="space-y-6">
       <div>
         <label for="username" class="block text-sm font-medium text-primary">Username</label>
         <input 
@@ -47,6 +47,7 @@ require_once 'includes/header.php';
 
       <button 
         type="submit" 
+        name="loginBTN"
         class="w-full py-3 px-6 rounded-lg bg-primary text-white font-semibold shadow hover:bg-highlight transition flex items-center justify-center gap-2"
       >
         <i class="fa-solid fa-right-to-bracket"></i>

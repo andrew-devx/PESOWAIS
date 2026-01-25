@@ -15,7 +15,7 @@ require_once 'includes/header.php';
       </div>
     </div>
 
-    <form action="logic/register_process.php" method="POST" class="space-y-6">
+    <form action="logic/register_code.php" method="POST" class="space-y-6">
 
         <div>
         <label for="email" class="block text-sm font-medium text-primary">Email address</label>
@@ -72,6 +72,7 @@ require_once 'includes/header.php';
       <button 
         type="submit" 
         class="w-full py-3 px-6 rounded-lg bg-primary text-white font-semibold shadow hover:bg-highlight transition flex items-center justify-center gap-2"
+        name="registerBTN"
       >
         <i class="fa-solid fa-user-plus"></i>
         Create Account
