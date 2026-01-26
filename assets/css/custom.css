@@ -5,6 +5,10 @@ body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+.goal-progress-gradient {
+    background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%);
+}
+
 .dropdown-menu {
     display: none;
     position: absolute;
@@ -20,4 +24,19 @@ body {
 
 .dropdown-menu.active {
     display: block;
+}
+
+.goal-nav-btn {
+    background: #0f3460;
+    color: #fff;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.goal-nav-btn:hover {
+    background: #1a1a2e;
+    transform: translateY(-1px);
+}
+
+.goal-nav-btn:active {
+    transform: translateY(0);
 }

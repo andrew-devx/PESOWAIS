@@ -13,8 +13,8 @@ CREATE TABLE transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     type ENUM('Income', 'Expense') NOT NULL,
-    category VARCHAR(50) NOT NULL, -- e.g., 'Food', 'Salary', 'Transport'
-    amount DECIMAL(10,2) NOT NULL, -- Perfect for currency
+    category VARCHAR(50) NOT NULL, -
+    amount DECIMAL(10,2) NOT NULL, -
     description VARCHAR(255),
     transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -35,10 +35,10 @@ CREATE TABLE loans (
 CREATE TABLE goals (
     goal_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    goal_name VARCHAR(100) NOT NULL, -- e.g., "Gaming Laptop"
+    goal_name VARCHAR(100) NOT NULL,
     target_amount DECIMAL(10,2) NOT NULL,
-    current_amount DECIMAL(10,2) DEFAULT 0.00, -- Optional: if they set aside specific cash
-    deadline DATE, -- Optional: The user's target date
+    current_amount DECIMAL(10,2) DEFAULT 0.00, 
+    deadline DATE, 
     status ENUM('Active', 'Achieved', 'Abandoned') DEFAULT 'Active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE

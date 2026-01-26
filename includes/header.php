@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PesoWais</title>
-    
+    <link rel="icon" href="assets/images/logo2.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/tailwind-config.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css" rel="stylesheet" type="text/css" />
@@ -49,11 +49,11 @@ if (session_status() === PHP_SESSION_NONE) {
                             </div>
                         </div>
                     <?php else: ?>
-                        <a href="login.php" class="inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-primary border border-primary text-white font-semibold text-sm hover:bg-highlight transition-colors">
+                        <a href="login.php" class="inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-accent border border-primary text-white font-semibold text-sm hover:bg-highlight transition-colors">
                             <i class="fa-solid fa-right-to-bracket mr-2"></i>
                             Login
                         </a>
-                        <a href="register.php" class="inline-flex items-center justify-center px-3 py-1.5 rounded-md border border-primary text-primary font-semibold text-sm hover:bg-primary hover:text-white transition-colors">
+                        <a href="register.php" class="inline-flex items-center justify-center px-3 py-1.5 rounded-md border border-primary text-primary font-semibold text-sm hover:bg-accent hover:text-white transition-colors">
                             <i class="fa-solid fa-user-plus mr-2"></i>
                             Register
                         </a>
