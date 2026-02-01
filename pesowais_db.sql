@@ -43,3 +43,15 @@ CREATE TABLE goals (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+CREATE TABLE subscriptions (
+    subscription_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    service_name VARCHAR(100) NOT NULL, 
+    amount DECIMAL(10,2) NOT NULL,
+    due_day INT NOT NULL, 
+    status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    last_payment_date DATE, 
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);

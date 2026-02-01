@@ -1,16 +1,18 @@
 <?php
 require_once 'includes/connection.php';
-require_once 'includes/header.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+include 'includes/header.php';
 ?>
-
-<div class="bg-gray-50 min-h-[75vh] flex items-center justify-center px-4">
+<div class="bg-gray-50 min-h-[75vh] flex items-center justify-center px-4 pt-20">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 sm:p-10">
     <div class="flex items-center gap-3 mb-6">
       <span class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 text-primary">
         <i class="fa-solid fa-user-plus text-xl"></i>
       </span>
       <div>
-        <p class="text-sm uppercase tracking-wide text-accent font-semibold">Get Started</p>
+        <p class="text-sm uppercase tracking-wide text-primary font-semibold">Get Started</p>
         <h1 class="text-3xl font-bold text-primary">Create Your Account</h1>
       </div>
     </div>
@@ -86,4 +88,6 @@ require_once 'includes/header.php';
   </div>
 </div>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>    <script src="assets/js/mobile-menu.js"></script>
+</body>
+</html>

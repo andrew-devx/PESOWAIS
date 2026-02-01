@@ -27,18 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
             ? document.getElementById('filterEndDate')?.value
             : (presetEnd ? presetEnd.toISOString().slice(0, 10) : '');
         const selectedCategories = Array.from(document.querySelectorAll('.category-filter-btn.active')).map(btn => btn.dataset.category);
-        const selectedMethods = Array.from(document.querySelectorAll('.method-filter-btn.active')).map(btn => btn.dataset.method);
         const rows = document.querySelectorAll('.transaction-row');
 
         rows.forEach(row => {
             const rowDate = row.dataset.date;
             const rowCategory = row.dataset.category;
-            const rowMethod = row.dataset.method;
             let showRow = true;
             if (startDate && rowDate < startDate) showRow = false;
             if (endDate && rowDate > endDate) showRow = false;
             if (selectedCategories.length > 0 && !selectedCategories.includes(rowCategory)) showRow = false;
-            if (selectedMethods.length > 0 && !selectedMethods.includes(rowMethod)) showRow = false;
             row.style.display = showRow ? '' : 'none';
         });
     }
@@ -85,46 +82,24 @@ document.addEventListener('DOMContentLoaded', () => {
             filterTransactions();
         });
     });
-    document.querySelectorAll('.method-filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            btn.classList.toggle('active');
-            if (btn.classList.contains('active')) {
-                btn.classList.add('bg-green-600', 'border-green-600', 'text-white');
-                btn.classList.remove('border-gray-300', 'text-gray-700');
-            } else {
-                btn.classList.remove('bg-green-600', 'border-green-600', 'text-white');
-                btn.classList.add('border-gray-300', 'text-gray-700');
-            }
-            filterTransactions();
-        });
-    });
     document.getElementById('resetTransactionBtn')?.addEventListener('click', resetTransactionFilters);
 
-    // Cashflow Filter Logic
+    // Cashflow Filter Logic (Expense Only)
     let cashflowChart = null;
-    const allCashflowData = Array.isArray(window.cashflowData) ? window.cashflowData : [];
-
-    function filterCashflow() {
+    async function filterCashflow() {
         const rangeEl = document.getElementById('cashflowRange');
         if (!rangeEl) return;
         const range = rangeEl.value;
-        const { start: presetStart, end: presetEnd } = computeRangeDates(range);
-        const startDate = range === 'custom'
-            ? document.getElementById('cashflowStartDate')?.value
-            : (presetStart ? presetStart.toISOString().slice(0, 10) : '');
-        const endDate = range === 'custom'
-            ? document.getElementById('cashflowEndDate')?.value
-            : (presetEnd ? presetEnd.toISOString().slice(0, 10) : '');
 
-        let filteredData = allCashflowData;
-        if (startDate || endDate) {
-            filteredData = allCashflowData.filter((item, index) => {
-                const itemDate = new Date(2026, 0, 21 + index); // Approximate dates
-                const start = startDate ? new Date(startDate) : new Date('2000-01-01');
-                const end = endDate ? new Date(endDate) : new Date('2099-12-31');
-                return itemDate >= start && itemDate <= end;
-            });
+        let filteredData = [];
+        try {
+            const response = await fetch(`logic/fetch_chart_data.php?timeframe=${encodeURIComponent(range)}`);
+            const json = await response.json();
+            if (json?.status === 'success' && Array.isArray(json.data)) {
+                filteredData = json.data;
+            }
+        } catch (err) {
+            console.error('Failed to load chart data', err);
         }
 
         if (cashflowChart) {
@@ -137,20 +112,35 @@ document.addEventListener('DOMContentLoaded', () => {
         cashflowChart = new Chart(cashflowCtx, {
             type: 'bar',
             data: {
-                labels: filteredData.map(d => d.day),
+                labels: filteredData.map(d => d.label ?? d.day),
                 datasets: [
-                    { label: 'Income', data: filteredData.map(d => d.income), backgroundColor: '#10b981' },
-                    { label: 'Expenses', data: filteredData.map(d => d.expense), backgroundColor: '#ef4444' }
+                    { 
+                        label: 'Expenses', 
+                        data: filteredData.map(d => d.expense), 
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6
+                    }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'top', labels: { font: { size: 11 } } }
+                    legend: { 
+                        display: false
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                    y: { 
+                        beginAtZero: true,
+                        suggestedMax: 1000,
+                        ticks: { 
+                            font: { size: 10 },
+                            callback: function(value) {
+                                return '₱' + value.toLocaleString();
+                            }
+                        }
+                    },
                     x: { ticks: { font: { size: 10 } } }
                 }
             }
@@ -171,6 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wire cashflow listeners
     const cashflowRangeEl = document.getElementById('cashflowRange');
     if (cashflowRangeEl) {
+        // Set default to weekly
+        cashflowRangeEl.value = 'weekly';
         cashflowRangeEl.addEventListener('change', () => {
             const isCustom = cashflowRangeEl.value === 'custom';
             const customDates = document.getElementById('cashflowCustomDates');
@@ -178,11 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
             filterCashflow();
         });
     }
-    document.getElementById('cashflowStartDate')?.addEventListener('change', filterCashflow);
-    document.getElementById('cashflowEndDate')?.addEventListener('change', filterCashflow);
-    document.getElementById('cashflowResetBtn')?.addEventListener('click', resetCashflowFilters);
+    // Cashflow range selector
+    document.getElementById('cashflowRange')?.addEventListener('change', filterCashflow);
 
-    // Initial Chart.js setup
+    // Initial Chart.js setup - Load with weekly (7 days) by default
     filterCashflow();
 
     // Goals Carousel Logic with arrow buttons
@@ -218,4 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    
 });

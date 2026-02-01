@@ -9,9 +9,11 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PesoWais</title>
-    <link rel="icon" href="assets/images/logo2.svg" />
+    <link rel="icon" href="assets/images/logo2.svg" type="image/svg+xml" sizes="192x192" />
+    <link rel="apple-touch-icon" href="assets/images/logo2.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/tailwind-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
@@ -22,7 +24,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="flex justify-between items-center h-16">  
                 
                 <a href="dashboard.php" class="flex items-center gap-2">
-                    <img src="assets/images/logo.svg" alt="PesoWais Logo" class="w-auto" style="max-height: 4rem;" />
+                    <img src="assets/images/logo.svg" alt="PesoWais Logo" class="w-auto" style="max-height: 2rem;" />
                 </a>
 
                 
@@ -35,7 +37,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <?php endif; ?>
                 </div>
 
-                <div class="hidden md:flex items-center gap-6">
+                <div class="hidden md:flex items-center gap-3">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <div class="relative group">
                             <button class="flex items-center gap-2 text-gray-600 hover:text-highlight transition-colors font-medium text-sm">

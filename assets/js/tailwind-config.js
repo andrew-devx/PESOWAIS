@@ -1,3 +1,6 @@
+// Ensure tailwind namespace exists before configuring
+window.tailwind = window.tailwind || {};
+
 tailwind.config = {
     theme: {
         extend: {
@@ -8,4 +11,4 @@ tailwind.config = {
             }
         }
     }
-}
+};

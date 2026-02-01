@@ -5,6 +5,7 @@
     include 'includes/html/features.html';
     include 'includes/html/team.html';
     include 'includes/html/contact.html';
+    include 'includes/html/call-to-action.html';
     include 'includes/footer.php';
 ?>
 

@@ -22,7 +22,7 @@
         </div>
 
         <div class="border-t border-gray-200 pt-4 text-center">
-            <p class="text-gray-600 text-sm">© 2026 PesoWais. Built with <span class="text-red-500"></span> by Charles Andrew.</p>
+            <p class="text-gray-600 text-sm">© 2026 PesoWais. Built by Students For Salary Earners</p>
         </div>
         </div>
     </div>

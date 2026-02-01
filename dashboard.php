@@ -1,71 +1,130 @@
 <?php
-    include_once 'includes/auth_check.php';
-    $username = $_SESSION['username'] ?? 'Charles';
-    include 'includes/modals.php';
-    // Sample financial data
+    include  'includes/connection.php';
+    include 'includes/auth_check.php';
+
+    $user_id = $_SESSION['user_id'];
+    $username = $_SESSION['username'] ?? 'User';
+
+    // Financial totals
+    $incomeStmt = $connection->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = ? AND type = 'Income'");
+    $incomeStmt->bind_param("i", $user_id);
+    $incomeStmt->execute();
+    $incomeResult = $incomeStmt->get_result()->fetch_assoc();
+    $totalIncome = (float) ($incomeResult['total'] ?? 0);
+    $incomeStmt->close();
+
+    $expenseStmt = $connection->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = ? AND type = 'Expense'");
+    $expenseStmt->bind_param("i", $user_id);
+    $expenseStmt->execute();
+    $expenseResult = $expenseStmt->get_result()->fetch_assoc();
+    $totalExpenses = (float) ($expenseResult['total'] ?? 0);
+    $expenseStmt->close();
+
+    $current_balance = $totalIncome - $totalExpenses;
+
+    // Average daily spending (last 30 days)
+    $avgStmt = $connection->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = ? AND type = 'Expense' AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+    $avgStmt->bind_param("i", $user_id);
+    $avgStmt->execute();
+    $avgResult = $avgStmt->get_result()->fetch_assoc();
+    $last30Expenses = (float) ($avgResult['total'] ?? 0);
+    $avgStmt->close();
+
+    $averageDailySpending = $last30Expenses > 0 ? ($last30Expenses / 30) : 0;
+
     $financialData = [
-        'currentBalance' => 15250.50,
-        'totalIncome' => 25000,
-        'totalExpenses' => 9749.50,
-        'averageDailySpending' => 312.22,
-        'monthlyBudgetLimit' => 10000,
+        'currentBalance' => $current_balance,
+        'totalIncome' => $totalIncome,
+        'totalExpenses' => $totalExpenses,
+        'averageDailySpending' => $averageDailySpending,
     ];
 
     // Calculate safe days
-    $safeDays = $financialData['currentBalance'] > 0 
-        ? floor($financialData['currentBalance'] / $financialData['averageDailySpending']) 
+    $safeDays = ($financialData['currentBalance'] > 0 && $financialData['averageDailySpending'] > 0)
+        ? floor($financialData['currentBalance'] / $financialData['averageDailySpending'])
         : 0;
 
-    // Expense categories breakdown (sample data)
-    $expenseBreakdown = [
-        ['category' => 'Food', 'amount' => 4500, 'percentage' => 46],
-        ['category' => 'Transport', 'amount' => 2200, 'percentage' => 23],
-        ['category' => 'School', 'amount' => 1800, 'percentage' => 18],
-        ['category' => 'Leisure', 'amount' => 1249.50, 'percentage' => 13],
-    ];
+    // Recent transactions (DB)
+    $recentTransactions = [];
+    $txnStmt = $connection->prepare("SELECT transaction_id, transaction_date, description, category, amount, type FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC LIMIT 8");
+    $txnStmt->bind_param("i", $user_id);
+    $txnStmt->execute();
+    $txnResult = $txnStmt->get_result();
+    while ($row = $txnResult->fetch_assoc()) {
+        $recentTransactions[] = $row;
+    }
+    $txnStmt->close();
 
-    // Last 7 days cash flow (sample data)
-    $cashflowDays = [
-        ['day' => 'Mon', 'income' => 5000, 'expense' => 1200],
-        ['day' => 'Tue', 'income' => 0, 'expense' => 950],
-        ['day' => 'Wed', 'income' => 0, 'expense' => 1100],
-        ['day' => 'Thu', 'income' => 0, 'expense' => 800],
-        ['day' => 'Fri', 'income' => 20000, 'expense' => 2500],
-        ['day' => 'Sat', 'income' => 0, 'expense' => 2000],
-        ['day' => 'Sun', 'income' => 0, 'expense' => 1199.50],
-    ];
-
-    // Recent transactions (sample data)
-    $recentTransactions = [
-        ['date' => '2026-01-27', 'description' => 'Jollibee Burger', 'category' => 'Food', 'amount' => 189.50, 'type' => 'expense', 'method' => 'Cash'],
-        ['date' => '2026-01-26', 'description' => 'Jeepney Fare', 'category' => 'Transport', 'amount' => 25.00, 'type' => 'expense', 'method' => 'Cash'],
-        ['date' => '2026-01-26', 'description' => 'Monthly Allowance', 'category' => 'Income', 'amount' => 20000.00, 'type' => 'income', 'method' => 'Bank Transfer'],
-        ['date' => '2026-01-25', 'description' => 'School Supplies', 'category' => 'School', 'amount' => 450.00, 'type' => 'expense', 'method' => 'G-Cash'],
-        ['date' => '2026-01-25', 'description' => 'Cinema Ticket', 'category' => 'Entertainment', 'amount' => 250.00, 'type' => 'expense', 'method' => 'Maya'],
-        ['date' => '2026-01-24', 'description' => 'Internet Bill', 'category' => 'Utilities', 'amount' => 1500.00, 'type' => 'expense', 'method' => 'Bank Transfer'],
-        ['date' => '2026-01-24', 'description' => 'Medical Checkup', 'category' => 'Health', 'amount' => 800.00, 'type' => 'expense', 'method' => 'Cash'],
-        ['date' => '2026-01-23', 'description' => 'Monthly Savings', 'category' => 'Savings', 'amount' => 5000.00, 'type' => 'expense', 'method' => 'Bank Transfer'],
-    ];
-
-    // Recurring subscriptions data
-    $subscriptions = [
-        ['name' => 'Spotify', 'amount' => 149, 'icon' => '🎵', 'dueDate' => 15],
-        ['name' => 'Netflix', 'amount' => 249, 'icon' => '📺', 'dueDate' => 20],
-    ];
-
-    // Utang Tracker (Debts/Loans) - Sample data
-    $utangData = [
-        ['creditor' => 'Best Friend', 'amount' => 2500, 'dueDate' => '2026-02-15'],
-        ['creditor' => 'Mom', 'amount' => 5000, 'dueDate' => '2026-03-01'],
-    ];
+    // Utang Tracker (Debts/Loans)
+    $utangData = [];
+    $utangStmt = $connection->prepare("SELECT person_name, amount, due_date FROM loans WHERE user_id = ? AND type = 'Payable' AND status = 'Pending' ORDER BY due_date ASC");
+    $utangStmt->bind_param("i", $user_id);
+    $utangStmt->execute();
+    $utangResult = $utangStmt->get_result();
+    while ($row = $utangResult->fetch_assoc()) {
+        $utangData[] = [
+            'creditor' => $row['person_name'],
+            'amount' => (float) $row['amount'],
+            'dueDate' => $row['due_date'],
+        ];
+    }
+    $utangStmt->close();
     $totalUtang = array_sum(array_column($utangData, 'amount'));
 
-    // Savings Goals (Multiple) - Sample data
-    $savingsGoals = [
-        ['name' => 'RTX 3060', 'icon' => 'fas fa-gamepad', 'saved' => 12000, 'target' => 20000],
-        ['name' => 'Study Abroad', 'icon' => 'fas fa-plane', 'saved' => 45000, 'target' => 100000],
-        ['name' => 'Emergency Fund', 'icon' => 'fas fa-umbrella', 'saved' => 8500, 'target' => 25000],
-    ];
+    // Savings Goals (DB)
+    $savingsGoals = [];
+    $goalStmt = $connection->prepare("SELECT goal_name, current_amount, target_amount, status FROM goals WHERE user_id = ? AND status IN ('Active', 'Achieved') ORDER BY created_at DESC");
+    $goalStmt->bind_param("i", $user_id);
+    $goalStmt->execute();
+    $goalResult = $goalStmt->get_result();
+    while ($row = $goalResult->fetch_assoc()) {
+        $savingsGoals[] = [
+            'name' => $row['goal_name'],
+            'saved' => (float) $row['current_amount'],
+            'target' => (float) $row['target_amount'],
+            'status' => $row['status'],
+        ];
+    }
+    $goalStmt->close();
+
+    // Budget vs Actual (DB)
+    $budgetData = [];
+    $budgetStmt = $connection->prepare("SELECT category, amount FROM budgets WHERE user_id = ? ORDER BY category ASC");
+    $budgetStmt->bind_param("i", $user_id);
+    $budgetStmt->execute();
+    $budgetResult = $budgetStmt->get_result();
+    
+    while ($row = $budgetResult->fetch_assoc()) {
+        $category = $row['category'];
+        $budgetAmount = (float) $row['amount'];
+        
+        // Get spending for this category (this month)
+        $spendingStmt = $connection->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = ? AND category = ? AND type = 'Expense' AND MONTH(transaction_date) = MONTH(CURDATE()) AND YEAR(transaction_date) = YEAR(CURDATE())");
+        $spendingStmt->bind_param("is", $user_id, $category);
+        $spendingStmt->execute();
+        $spendingResult = $spendingStmt->get_result()->fetch_assoc();
+        $spent = (float) ($spendingResult['total'] ?? 0);
+        $spendingStmt->close();
+        
+        $percentage = $budgetAmount > 0 ? ($spent / $budgetAmount) * 100 : 0;
+        $color = $percentage >= 80 ? 'bg-red-400' : 'bg-green-400';
+        
+        $budgetData[] = [
+            'category' => $category,
+            'spent' => $spent,
+            'budget' => $budgetAmount,
+            'percentage' => $percentage,
+            'color' => $color,
+        ];
+    }
+    $budgetStmt->close();
+
+    // Recurring subscriptions (not implemented in DB yet)
+    $subscriptions = [];
+
+    include 'logic/ai_analysis.php';
+    include 'includes/header.php';
+    include 'includes/modals.php';
 
     // Reusable stat card function
     function renderStatCard($title, $value, $subtitle, $bgColor, $iconClass) {
@@ -76,7 +135,7 @@
         echo "<p class='text-lg sm:text-2xl font-bold $bgColor mb-1'>$value</p>";
         echo "<p class='text-xs text-gray-500'>$subtitle</p>";
         echo '</div>';
-        echo "<i class='$iconClass text-lg sm:text-2xl opacity-80'></i>";
+        echo "<i class='$iconClass text-lg sm:text-2xl -mt-1'></i>";
         echo '</div></div>';
     }
 
@@ -85,7 +144,9 @@
     $balanceStatus = $financialData['currentBalance'] >= 0 ? 'Positive' : 'Negative';
 
     // Mood Meter Logic - Based on spending percentage
-    $spendingPercentage = ($financialData['totalExpenses'] / $financialData['totalIncome']) * 100;
+    $spendingPercentage = $financialData['totalIncome'] > 0 
+        ? ($financialData['totalExpenses'] / $financialData['totalIncome']) * 100 
+        : 0;
     
     if ($spendingPercentage <= 40) {
         // Zone A: Safe
@@ -114,123 +175,7 @@
     }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PesoWais Dashboard</title>
-    <script src="assets/js/tailwind-config.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/custom.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-        }
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigation Header -->
-    <nav class="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo & Brand -->
-                <div class="flex items-center gap-8">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-wallet text-highlight text-2xl"></i>
-                        <h1 class="text-2xl font-bold text-primary">PesoWais</h1>
-                    </div>
-                    
-                    <!-- Navigation Menu (Desktop) -->
-                    <div class="hidden md:flex items-center gap-1">
-                        <a href="#" class="text-gray-600 hover:text-highlight hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                            <i class="fas fa-chart-line"></i> Dashboard
-                        </a>
-                        <a href="#" class="text-gray-600 hover:text-highlight hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                            <i class="fas fa-exchange-alt"></i> Transactions
-                        </a>
-                        <a href="#" class="text-gray-600 hover:text-highlight hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                            <i class="fas fa-bullseye"></i> Goals
-                        </a>
-                        <a href="#" class="text-gray-600 hover:text-highlight hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                            <i class="fas fa-hand-holding-heart"></i> Utang
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Right Section -->
-                <div class="flex items-center gap-4">
-                    <!-- Notifications (Hidden for now) -->
-                    <button class="text-gray-600 hover:text-highlight hover:bg-gray-100 p-2 rounded-lg transition relative hidden sm:block">
-                        <i class="fas fa-bell text-lg"></i>
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full"></span>
-                    </button>
-
-                    <!-- User Profile Dropdown -->
-                    <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
-                        <div class="text-right hidden sm:block">
-                            <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($username); ?></p>
-                            <p class="text-xs text-gray-500">Student</p>
-                        </div>
-                        <div class="w-10 h-10 rounded-full bg-highlight flex items-center justify-center">
-                            <i class="fas fa-user text-white"></i>
-                        </div>
-                        <a href="logic/logout.php" class="text-gray-500 hover:text-red-600 transition" title="Logout">
-                            <i class="fas fa-sign-out-alt text-lg"></i>
-                        </a>
-                    </div>
-
-                    <!-- Mobile Menu Button -->
-                    <button id="mobileMenuBtn" class="md:hidden text-gray-600 hover:text-highlight p-2 rounded-lg transition">
-                        <i class="fas fa-bars text-lg"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Sidebar Menu -->
-        <div id="mobileSidebar" class="hidden md:hidden border-t border-gray-200 bg-white max-h-[calc(100vh-64px)] overflow-y-auto">
-            <div class="px-4 py-3 space-y-1">
-                <a href="#" class="block px-3 py-2 rounded-lg text-gray-600 hover:text-highlight hover:bg-gray-50 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a href="#" class="block px-3 py-2 rounded-lg text-gray-600 hover:text-highlight hover:bg-gray-50 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-exchange-alt"></i> Transactions
-                </a>
-                <a href="#" class="block px-3 py-2 rounded-lg text-gray-600 hover:text-highlight hover:bg-gray-50 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-bullseye"></i> Goals
-                </a>
-                <a href="#" class="block px-3 py-2 rounded-lg text-gray-600 hover:text-highlight hover:bg-gray-50 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-hand-holding-heart"></i> Utang
-                </a>
-            </div>
-            <hr class="border-gray-200">
-            <div class="px-4 py-3 space-y-1">
-                <div class="px-3 py-2 flex items-center gap-3 mb-2">
-                    <div class="w-10 h-10 rounded-full bg-highlight flex items-center justify-center">
-                        <i class="fas fa-user text-white"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($username); ?></p>
-                        <p class="text-xs text-gray-500">Student</p>
-                    </div>
-                </div>
-                <a href="logic/logout.php" class="block px-3 py-2 rounded-lg text-gray-600 hover:text-red-600 hover:bg-gray-50 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div>
-        </div>
-
+<body class="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#c3cfe2]">
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
         <!-- Welcome Section -->
@@ -268,11 +213,11 @@
                             'fas fa-arrow-trend-down text-red-600'
                         );
                         renderStatCard(
-                            'Total Debt',
+                            'Total Utang',
                             '₱' . number_format($totalUtang, 2),
-                            count($utangData) . ' loans',
+                            count($utangData) . ' active loans',
                             'text-orange-600',
-                            'fas fa-hand-holding-heart text-orange-600'
+                            'fas fa-file-invoice-dollar text-orange-600'
                         );
                     ?>
                 </div>
@@ -315,49 +260,47 @@
                     <div class="bg-white rounded-lg p-4 shadow-lg">
                         <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Budget vs Actual</h3>
                         <div class="space-y-4">
-                            <?php
-                                $budgetData = [
-                                    ['category' => 'Food', 'spent' => 4500, 'budget' => 5000, 'color' => 'bg-red-400'],
-                                    ['category' => 'Transport', 'spent' => 2200, 'budget' => 2500, 'color' => 'bg-green-400'],
-                                    ['category' => 'School', 'spent' => 1800, 'budget' => 2000, 'color' => 'bg-green-400'],
-                                    ['category' => 'Leisure', 'spent' => 1249.50, 'budget' => 1500, 'color' => 'bg-green-400'],
-                                ];
-                                foreach ($budgetData as $item):
-                                    $percentage = ($item['spent'] / $item['budget']) * 100;
-                                    $statusColor = $percentage >= 80 ? 'text-yellow-600' : 'text-green-600';
-                            ?>
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="font-semibold text-sm text-gray-900"><?php echo $item['category']; ?></span>
-                                        <span class="text-xs <?php echo $statusColor; ?>">₱<?php echo number_format($item['spent'], 0); ?></span>
+                            <?php if (!empty($budgetData)): ?>
+                                <?php foreach ($budgetData as $item): ?>
+                                    <div class="group">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-semibold text-sm text-gray-900"><?php echo $item['category']; ?></span>
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-xs font-semibold text-gray-700">₱<?php echo number_format($item['spent'], 2); ?> / ₱<?php echo number_format($item['budget'], 2); ?></span>
+                                                <button onclick="openEditBudgetModal('<?php echo htmlspecialchars($item['category']); ?>', <?php echo $item['budget']; ?>)" class="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded text-xs font-medium transition" title="Edit">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="<?php echo $item['color']; ?> h-2 rounded-full" style="width: <?php echo min($item['percentage'], 100); ?>%"></div>
+                                        </div>
+                                        <div class="flex justify-between items-center mt-1 text-[11px] text-gray-600">
+                                            <span class="<?php echo ($item['percentage'] >= 80 ? 'text-yellow-600' : 'text-green-600'); ?> font-semibold"><?php echo round($item['percentage']); ?>% used</span>
+                                            <span>Remaining: ₱<?php echo number_format(max($item['budget'] - $item['spent'], 0), 2); ?></span>
+                                        </div>
                                     </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="<?php echo $item['color']; ?> h-2 rounded-full" style="width: <?php echo min($percentage, 100); ?>%"></div>
-                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="flex flex-col items-center justify-center py-8 text-gray-500">
+                                    <i class="fas fa-chart-pie text-3xl mb-2 opacity-50"></i>
+                                    <p class="text-sm font-medium">No budgets set yet</p>
+                                    <p class="text-xs text-gray-400 mt-1">Create a budget to track your spending</p>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
 
                     <div class="bg-white rounded-lg p-4 shadow-lg">
-                        <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Cash Flow</h3>
+                        <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-4">Expense Tracker</h3>
                         
-                        <div class="bg-gray-50 p-3 rounded-lg mb-4 space-y-3">
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                                <div class="flex items-center gap-2">
-                                    <label class="text-xs font-semibold text-gray-700">Range</label>
-                                    <select id="cashflowRange" class="text-xs border border-gray-300 rounded px-2 py-1">
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="yearly">Yearly</option>
-                                        <option value="custom">Custom</option>
-                                    </select>
-                                </div>
-                                <button class="text-xs text-blue-600 hover:text-blue-700 font-medium" onclick="resetCashflowFilters()">Reset</button>
-                            </div>
-                            <div id="cashflowCustomDates" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <input type="date" id="cashflowStartDate" class="text-xs border border-gray-300 rounded px-2 py-1" placeholder="From">
-                                <input type="date" id="cashflowEndDate" class="text-xs border border-gray-300 rounded px-2 py-1" placeholder="To">
+                        <div class="bg-gray-50 p-3 rounded-lg mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-semibold text-gray-700">Range</label>
+                                <select id="cashflowRange" class="bg-white text-gray-900 text-xs border border-gray-300 rounded px-2 py-1">
+                                    <option value="weekly" selected>This Week</option>
+                                    <option value="monthly">This Month</option>
+                                </select>
                             </div>
                         </div>
 
@@ -373,7 +316,7 @@
 
                     <!-- Filter Bar -->
                     <div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Preset Range Filter -->
                             <div class="flex flex-col gap-2">
                                 <label class="text-xs font-semibold text-gray-700">Range</label>
@@ -384,8 +327,8 @@
                                     <option value="custom">Custom</option>
                                 </select>
                                 <div id="transactionCustomDates" class="hidden grid grid-cols-2 gap-2">
-                                    <input type="date" id="filterStartDate" class="text-xs border border-gray-300 rounded px-2 py-1" placeholder="From">
-                                    <input type="date" id="filterEndDate" class="text-xs border border-gray-300 rounded px-2 py-1" placeholder="To">
+                                    <input type="date" id="filterStartDate" class="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-900 placeholder-gray-500" placeholder="From">
+                                    <input type="date" id="filterEndDate" class="text-xs border border-gray-300 rounded px-2 py-1 bg-white text-gray-900 placeholder-gray-500" placeholder="To">
                                 </div>
                             </div>
 
@@ -410,26 +353,6 @@
                                 </div>
                             </div>
 
-                            <!-- Method Filter -->
-                            <div class="flex flex-col gap-2">
-                                <label class="text-xs font-semibold text-gray-700">Payment Method</label>
-                                <div class="flex gap-1 flex-wrap">
-                                    <?php
-                                        // Extract unique methods from transactions
-                                        $methods = array_unique(array_column($recentTransactions, 'method'));
-                                        sort($methods);
-                                        foreach ($methods as $method):
-                                    ?>
-                                        <button
-                                            type="button"
-                                            class="method-filter-btn px-2 py-1 rounded text-xs font-medium border border-gray-300 text-gray-700 transition hover:border-green-500"
-                                            data-method="<?php echo htmlspecialchars($method); ?>"
-                                        >
-                                            <?php echo htmlspecialchars($method); ?>
-                                        </button>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
                         </div>
                         <div class="flex items-center gap-3 pt-2 border-t border-gray-300">
                             <button id="resetTransactionBtn" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition">Reset</button>
@@ -445,21 +368,32 @@
                                     <th class="text-left py-2 px-3 text-gray-600 font-semibold">Description</th>
                                     <th class="text-left py-2 px-3 text-gray-600 font-semibold">Category</th>
                                     <th class="text-right py-2 px-3 text-gray-600 font-semibold">Amount</th>
-                                    <th class="text-center py-2 px-3 text-gray-600 font-semibold">Method</th>
+                                    <th class="text-center py-2 px-3 text-gray-600 font-semibold">Type</th>
+                                    <th class="text-center py-2 px-3 text-gray-600 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="transactionTableBody">
                                 <?php foreach (array_slice($recentTransactions, 0, 5) as $transaction): ?>
-                                    <tr class="transaction-row border-b border-gray-100 hover:bg-gray-50 transition" data-date="<?php echo $transaction['date']; ?>" data-category="<?php echo $transaction['category']; ?>" data-method="<?php echo $transaction['method']; ?>">
-                                        <td class="py-2 px-3 text-gray-900"><?php echo date('M d', strtotime($transaction['date'])); ?></td>
-                                        <td class="py-2 px-3 text-gray-900 font-medium"><?php echo $transaction['description']; ?></td>
+                                    <tr class="transaction-row border-b border-gray-100 hover:bg-gray-50 transition" data-date="<?php echo date('Y-m-d', strtotime($transaction['transaction_date'])); ?>" data-category="<?php echo $transaction['category']; ?>">
+                                        <td class="py-2 px-3 text-gray-900"><?php echo date('M d', strtotime($transaction['transaction_date'])); ?></td>
+                                        <td class="py-2 px-3 text-gray-900 font-medium"><?php echo htmlspecialchars($transaction['description'] ?? ''); ?></td>
                                         <td class="py-2 px-3">
-                                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium"><?php echo $transaction['category']; ?></span>
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium"><?php echo htmlspecialchars($transaction['category']); ?></span>
                                         </td>
-                                        <td class="py-2 px-3 text-right font-semibold <?php echo $transaction['type'] === 'income' ? 'text-green-600' : 'text-gray-900'; ?>">
-                                            <?php echo ($transaction['type'] === 'income' ? '+' : '-') . '₱' . number_format($transaction['amount'], 0); ?>
+                                        <td class="py-2 px-3 text-right font-semibold <?php echo $transaction['type'] === 'Income' ? 'text-green-600' : 'text-gray-900'; ?>">
+                                            <?php echo ($transaction['type'] === 'Income' ? '+' : '-') . '₱' . number_format($transaction['amount'], 0); ?>
                                         </td>
-                                        <td class="py-2 px-3 text-center text-xs text-gray-600"><?php echo $transaction['method']; ?></td>
+                                        <td class="py-2 px-3 text-center text-xs text-gray-600"><?php echo htmlspecialchars($transaction['type']); ?></td>
+                                        <td class="py-2 px-3 text-center">
+                                            <div class="flex justify-center gap-2">
+                                                <button onclick="openEditTransactionModal(<?php echo htmlspecialchars(json_encode($transaction)); ?>)" class="text-blue-600 hover:text-blue-700 text-xs font-medium" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button onclick="deleteTransaction(<?php echo $transaction['transaction_id'] ?? 0; ?>)" class="text-red-600 hover:text-red-700 text-xs font-medium" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -499,26 +433,30 @@
                     
                     <!-- Goals Carousel Container -->
                     <div class="relative overflow-hidden">
-                        <?php foreach ($savingsGoals as $idx => $goal): ?>
-                            <?php
-                                // Guard against zero targets and clamp to sensible bounds
-                                $progress = ($goal['target'] > 0) ? ($goal['saved'] / $goal['target']) * 100 : 0;
-                                $progress = max(0, $progress);
-                                $progressWidth = min($progress, 100);
-                                $progressDisplay = round($progress);
-                            ?>
-                            <div class="goal-slide <?php echo $idx === 0 ? '' : 'hidden'; ?>" data-goal="<?php echo $idx; ?>">
-                                <div class="flex items-start justify-between mb-2">
-                                    <p class="text-base font-bold text-gray-900"><?php echo $goal['name']; ?></p>
-                                    <i class="<?php echo $goal['icon']; ?> text-purple-600 text-lg"></i>
+                        <?php if (empty($savingsGoals)): ?>
+                            <p class="text-xs text-gray-500">No goals yet.</p>
+                        <?php else: ?>
+                            <?php foreach ($savingsGoals as $idx => $goal): ?>
+                                <?php
+                                    // Guard against zero targets and clamp to sensible bounds
+                                    $progress = ($goal['target'] > 0) ? ($goal['saved'] / $goal['target']) * 100 : 0;
+                                    $progress = max(0, $progress);
+                                    $progressWidth = min($progress, 100);
+                                    $progressDisplay = round($progress);
+                                ?>
+                                <div class="goal-slide <?php echo $idx === 0 ? '' : 'hidden'; ?>" data-goal="<?php echo $idx; ?>">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <p class="text-base font-bold text-gray-900"><?php echo $goal['name']; ?></p>
+                                        <i class="fas fa-bullseye text-purple-600 text-lg"></i>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                        <div class="h-2 rounded-full" style="width: <?php echo $progressWidth; ?>%; background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%);"></div>
+                                    </div>
+                                    <p class="text-xs font-semibold text-gray-900">₱<?php echo number_format($goal['saved'], 0); ?> / ₱<?php echo number_format($goal['target'], 0); ?></p>
+                                    <p class="text-xs text-gray-500"><?php echo $progressDisplay; ?>% Complete</p>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                                    <div class="h-2 rounded-full" style="width: <?php echo $progressWidth; ?>%; background: linear-gradient(90deg, #0f3460 0%, #1a1a2e 100%);"></div>
-                                </div>
-                                <p class="text-xs font-semibold text-gray-900">₱<?php echo number_format($goal['saved'], 0); ?> / ₱<?php echo number_format($goal['target'], 0); ?></p>
-                                <p class="text-xs text-gray-500"><?php echo $progressDisplay; ?>% Complete</p>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -537,48 +475,96 @@
                 <div class="bg-white rounded-lg p-4 shadow-lg">
                     <div class="flex justify-between items-center mb-3">
                         <p class="text-gray-500 text-xs font-bold uppercase">Subscriptions</p>
-                        <button class="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full w-6 h-6 flex items-center justify-center transition text-xs font-bold" title="Add subscription"><i class="fas fa-plus"></i></button>
+                        <button class="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full w-6 h-6 flex items-center justify-center transition text-xs font-bold" title="Add subscription" onclick="openModal('addSubscriptionModal')"><i class="fas fa-plus"></i></button>
                     </div>
                     <div class="space-y-2">
-                        <?php foreach ($subscriptions as $sub): ?>
-                            <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                                <div class="flex items-center gap-2">
-                                    <i class="<?php echo ($sub['name'] === 'Spotify') ? 'fab fa-spotify text-green-600' : 'fas fa-play text-red-600'; ?> text-base"></i>
-                                    <div>
-                                        <p class="text-xs font-semibold text-gray-900"><?php echo $sub['name']; ?></p>
-                                        <p class="text-xs text-gray-500">Due: <?php echo $sub['dueDate']; ?>th</p>
+                        <?php if (empty($subscriptions)): ?>
+                            <p class="text-xs text-gray-500">No subscriptions yet.</p>
+                        <?php else: ?>
+                            <?php foreach ($subscriptions as $sub): ?>
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                                    <div class="flex items-center gap-2">
+                                        <i class="<?php echo ($sub['name'] === 'Spotify') ? 'fab fa-spotify text-green-600' : 'fas fa-play text-red-600'; ?> text-base"></i>
+                                        <div>
+                                            <p class="text-xs font-semibold text-gray-900"><?php echo $sub['name']; ?></p>
+                                            <p class="text-xs text-gray-500">Due: <?php echo $sub['dueDate']; ?>th</p>
+                                        </div>
                                     </div>
+                                    <p class="text-xs font-bold text-gray-900">₱<?php echo number_format($sub['amount'], 0); ?></p>
                                 </div>
-                                <p class="text-xs font-bold text-gray-900">₱<?php echo number_format($sub['amount'], 0); ?></p>
-                            </div>
-                        <?php endforeach; ?>
-                        <p class="text-xs text-gray-600 mt-2">Total: ₱<?php echo number_format(array_sum(array_column($subscriptions, 'amount')), 0); ?>/month</p>
+                            <?php endforeach; ?>
+                            <p class="text-xs text-gray-600 mt-2">Total: ₱<?php echo number_format(array_sum(array_column($subscriptions, 'amount')), 0); ?>/month</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <!-- Tip Card -->
-                <div class="bg-gradient-to-br from-amber-100 to-amber-50 rounded-lg p-4 border border-amber-300">
-                    <h4 class="text-amber-900 font-bold text-xs mb-2 flex items-center gap-1"><i class="fas fa-lightbulb text-amber-600"></i> Smart Tip</h4>
-                    <p class="text-amber-800 text-xs leading-relaxed">Packed lunch saves ₱150/day = ₱4,500/month extra!</p>
+                <?php
+                    // Determine card styling based on AI mood
+                    $tipCardClass = match($ai_mood) {
+                        'danger' => 'from-red-100 to-red-50 border-red-300',
+                        'warning' => 'from-amber-100 to-amber-50 border-amber-300',
+                        'good' => 'from-green-100 to-green-50 border-green-300',
+                        default => 'from-blue-100 to-blue-50 border-blue-300',
+                    };
+                    $tipTextClass = match($ai_mood) {
+                        'danger' => 'text-red-900',
+                        'warning' => 'text-amber-900',
+                        'good' => 'text-green-900',
+                        default => 'text-blue-900',
+                    };
+                    $tipIconClass = match($ai_mood) {
+                        'danger' => 'text-red-600',
+                        'warning' => 'text-amber-600',
+                        'good' => 'text-green-600',
+                        default => 'text-blue-600',
+                    };
+                ?>
+                <div class="bg-gradient-to-br <?php echo $tipCardClass; ?> rounded-lg p-4 border">
+                    <h4 class="<?php echo $tipTextClass; ?> font-bold text-xs mb-2 flex items-center gap-1"><i class="fas fa-lightbulb <?php echo $tipIconClass; ?>"></i> AI Insight</h4>
+                    <p class="<?php echo $tipTextClass; ?> text-xs leading-relaxed"><?php echo $ai_message; ?></p>
                 </div>
             </div>
         </div>
     </div>
+    <?php include 'includes/footer.php'; ?>
+    <script src="assets/js/dashboard.js?v=<?php echo time(); ?>"></script>
+    <script src="assets/js/waisbot.js?v=<?php echo time(); ?>"></script>
+    <button onclick="toggleChat()" class="waisbot-fab" aria-label="Open WaisBot">
+        <i class="fas fa-robot"></i>
+    </button>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex justify-between items-center text-xs">
-                <p class="text-gray-600">© 2024 PesoWais. All rights reserved.</p>
-                <div class="flex gap-4">
-                    <a href="#" class="text-gray-600 hover:text-gray-900">Privacy Policy</a>
-                    <a href="#" class="text-gray-600 hover:text-gray-900">Terms of Service</a>
-                </div>
+<div id="waisBotWindow" class="hidden waisbot-window" role="dialog" aria-label="WaisBot">
+    
+    <div class="waisbot-header">
+        <div class="waisbot-title-wrap">
+            <div class="waisbot-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div>
+                <h3 class="waisbot-title">WaisBot</h3>
+                <p class="waisbot-subtitle">Tutulungan ka maging WAIS</p>
             </div>
         </div>
-    </footer>
+        <button onclick="toggleChat()" class="waisbot-close" aria-label="Close">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
-    <script>window.cashflowData = <?php echo json_encode($cashflowDays); ?>;</script>
-    <script src="assets/js/dashboard.js"></script>
+    <div id="chatBody" class="waisbot-body scrollbar-hide">
+        <div class="chat-message chat-message--bot">
+            <div class="chat-bubble chat-bubble--bot">
+                <p class="chat-text">Hello! I'm WaisBot. Ask me about budgeting, savings, or tips! 🤖💰</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="waisbot-input-row font-color-white">
+        <input type="text" id="userMessage" class="waisbot-input" placeholder="Ask for advice..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()" class="waisbot-send" aria-label="Send">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
 </body>
-</html>
