@@ -9,10 +9,8 @@ if (empty($userMessage)) {
     exit();
 }
 
-// ---------------------------------------------------------
-// 🔴 PASTE YOUR KEY HERE (Inside the quotes)
-// ---------------------------------------------------------
-$apiKey = 'AIzaSyCZfaYR3eMHKrpdfqj0-0Dk-Reh9UGe7mE'; 
+
+$apiKey = 'API_KO_DITO'; 
 
 // API Configuration
 $model = 'gemini-2.5-flash';
