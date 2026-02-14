@@ -88,6 +88,36 @@ include 'includes/header.php';
   </div>
 </div>
 
-<?php include 'includes/footer.php'; ?>    <script src="assets/js/mobile-menu.js"></script>
+<!-- Error Modal -->
+<dialog id="errorModal">
+    <div class="modal-content modal-content--small">
+        <div class="modal-header">
+            <h2 id="errorTitle">⚠️ Registration Error</h2>
+            <button class="modal-close">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="text-center py-4">
+                <!-- Icon container without inline styles -->
+                <div class="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-red-400 to-rose-600 text-white mb-4 shadow-lg">
+                    <i class="fa-solid fa-exclamation-triangle text-4xl"></i>
+                </div>
+                <p id="errorMessage" class="text-gray-700 font-semibold"></p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary close-modal-btn">
+                Try Again
+            </button>
+        </div>
+    </div>
+</dialog>
+
+<?php include 'includes/footer.php'; ?>
+<link rel="stylesheet" href="assets/css/modals.css">
+
+<!-- New External Register Script -->
+<script src="assets/js/register.js" defer></script>
 </body>
 </html>

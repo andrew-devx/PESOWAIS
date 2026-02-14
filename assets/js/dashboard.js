@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function computeRangeDates(range) {
         const today = new Date();
         let start = null;
-        const end = today;
+        const end = new Date(today);
+        end.setDate(today.getDate() + 30); // Include future transactions (next 30 days)
         if (range === 'weekly') {
             start = new Date(today);
             start.setDate(today.getDate() - 6);
@@ -18,31 +19,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function filterTransactions() {
-        const range = document.getElementById('filterRange')?.value || 'weekly';
-        const { start: presetStart, end: presetEnd } = computeRangeDates(range);
-        const startDate = range === 'custom'
-            ? document.getElementById('filterStartDate')?.value
-            : (presetStart ? presetStart.toISOString().slice(0, 10) : '');
-        const endDate = range === 'custom'
-            ? document.getElementById('filterEndDate')?.value
-            : (presetEnd ? presetEnd.toISOString().slice(0, 10) : '');
-        const selectedCategories = Array.from(document.querySelectorAll('.category-filter-btn.active')).map(btn => btn.dataset.category);
+        const selectedCategories = Array.from(document.querySelectorAll('.category-filter-btn.active')).map(btn => btn.dataset.category.trim());
         const rows = document.querySelectorAll('.transaction-row');
 
+        console.log('Selected Categories:', selectedCategories);
+
         rows.forEach(row => {
-            const rowDate = row.dataset.date;
-            const rowCategory = row.dataset.category;
+            const rowCategory = row.dataset.category.trim();
             let showRow = true;
-            if (startDate && rowDate < startDate) showRow = false;
-            if (endDate && rowDate > endDate) showRow = false;
+            // Only filter by category - ignore date range for Recent Transactions (always show last 5)
             if (selectedCategories.length > 0 && !selectedCategories.includes(rowCategory)) showRow = false;
+            console.log('Row:', rowCategory, 'Show:', showRow);
             row.style.display = showRow ? '' : 'none';
         });
     }
 
     function resetTransactionFilters() {
         const rangeEl = document.getElementById('filterRange');
-        if (rangeEl) rangeEl.value = 'weekly';
+        if (rangeEl) rangeEl.value = 'monthly';
         const startEl = document.getElementById('filterStartDate');
         const endEl = document.getElementById('filterEndDate');
         if (startEl) startEl.value = '';
@@ -114,9 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: filteredData.map(d => d.label ?? d.day),
                 datasets: [
-                    { 
-                        label: 'Expenses', 
-                        data: filteredData.map(d => d.expense), 
+                    {
+                        label: 'Expenses',
+                        data: filteredData.map(d => d.expense),
                         backgroundColor: '#ef4444',
                         borderRadius: 6
                     }
@@ -126,17 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { 
+                    legend: {
                         display: false
                     }
                 },
                 scales: {
-                    y: { 
+                    y: {
                         beginAtZero: true,
                         suggestedMax: 1000,
-                        ticks: { 
+                        ticks: {
                             font: { size: 10 },
-                            callback: function(value) {
+                            callback: function (value) {
                                 return '₱' + value.toLocaleString();
                             }
                         }
@@ -177,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filterCashflow();
 
     // Goals Carousel Logic with arrow buttons
-    (function() {
+    (function () {
         const slides = Array.from(document.querySelectorAll('.goal-slide'));
         const prevBtn = document.getElementById('goalPrevBtn');
         const nextBtn = document.getElementById('goalNextBtn');
@@ -210,5 +204,90 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    
+    // Modal Event Listeners
+    // Open various modals
+    document.querySelectorAll('.open-modal-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modalId = btn.dataset.modal;
+            if (openModal) openModal(modalId);
+        });
+    });
+
+    // Edit Budget
+    document.querySelectorAll('.edit-budget-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const category = btn.dataset.category;
+            const budget = btn.dataset.budget;
+            if (openEditBudgetModal) openEditBudgetModal(category, budget);
+        });
+    });
+
+    // Edit Transaction
+    document.querySelectorAll('.edit-transaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const transaction = JSON.parse(btn.dataset.transaction);
+            if (openEditTransactionModal) openEditTransactionModal(transaction);
+        });
+    });
+
+    // Delete Transaction
+    document.querySelectorAll('.delete-transaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            if (deleteTransaction) deleteTransaction(id);
+        });
+    });
+
+    // Edit Subscription
+    document.querySelectorAll('.edit-subscription-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.name;
+            const amount = btn.dataset.amount;
+            const due = btn.dataset.due;
+            const status = btn.dataset.status;
+            const lastPayment = btn.dataset.lastPayment;
+            if (openEditSubscriptionModal) openEditSubscriptionModal(name, amount, due, status, lastPayment);
+        });
+    });
+
+    // Delete Subscription
+    document.querySelectorAll('.delete-subscription-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const name = e.target.closest('.delete-subscription-btn').dataset.name;
+            if (deleteSubscription) deleteSubscription(name);
+        });
+    });
+
+    // Export Transactions
+    const exportBtn = document.getElementById('exportTransactionsBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const range = document.getElementById('filterRange').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            // Get active category
+            let category = '';
+            const activeCategoryBtn = document.querySelector('.category-filter-btn.bg-blue-100'); // Check for active class
+            // Note: In resetTransactionFilters, active class is removed. In click handler, it's toggled.
+            // The active classes are: 'bg-blue-600', 'border-blue-600', 'text-white'
+            // Wait, looking at line 70, active classes are bg-blue-600.
+
+            const activeBtn = document.querySelector('.category-filter-btn.active');
+            if (activeBtn) {
+                category = activeBtn.dataset.category;
+            }
+
+            let url = `logic/export_transactions.php?range=${range}`;
+            if (range === 'custom') {
+                url += `&start=${startDate}&end=${endDate}`;
+            }
+            if (category) {
+                url += `&category=${encodeURIComponent(category)}`;
+            }
+
+            window.location.href = url;
+        });
+    }
+
 });

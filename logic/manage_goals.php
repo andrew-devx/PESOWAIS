@@ -1,100 +1,182 @@
 <?php
 // logic/manage_goals.php
+ob_start();
 header('Content-Type: application/json');
-session_start();
-include '../includes/connection.php';
 
-// 1. SECURITY: Check Login
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(["status" => "error", "message" => "Unauthorized"]);
+error_reporting(0);
+ini_set('display_errors', 0);
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function sendResponse($status, $message, $code = 200) {
+    ob_end_clean();
+    http_response_code($code);
+    echo json_encode(["status" => $status, "message" => $message]);
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+if (!isset($_SESSION['user_id'])) {
+    sendResponse("error", "Unauthorized", 401);
+}
 
-// 2. CHECK REQUEST METHOD
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
-    // We use an 'action' parameter to decide what to do
-    $action = $_POST['action'] ?? '';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    sendResponse("error", "Invalid Request Method", 405);
+}
 
-    // --- SCENARIO A: CREATE NEW GOAL ---
-    if ($action === 'create') {
-        $goal_name = trim($_POST['goal_name']);
-        $target_amount = floatval($_POST['target_amount']);
-        $deadline = !empty($_POST['deadline']) ? $_POST['deadline'] : NULL;
-        $current_amount = isset($_POST['current_amount']) ? floatval($_POST['current_amount']) : 0;
+require_once dirname(__DIR__) . '/includes/constants.php';
+$connection = @new mysqli($hostname, $username, $password, $database);
 
-        $stmt = $connection->prepare("INSERT INTO goals (user_id, goal_name, target_amount, current_amount, deadline) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("isdds", $user_id, $goal_name, $target_amount, $current_amount, $deadline);
+if ($connection->connect_error) {
+    sendResponse("error", "Database connection failed", 500);
+}
 
-        if ($stmt->execute()) {
-            echo json_encode(["status" => "success", "message" => "New goal set! Kayang-kaya yan."]);
-        } else {
-            echo json_encode(["status" => "error", "message" => "SQL Error: " . $stmt->error]);
-        }
-        $stmt->close();
+$user_id = intval($_SESSION['user_id']);
+$action = $_POST['action'] ?? '';
+
+if ($action === 'create') {
+    $goal_name = trim($_POST['goal_name'] ?? '');
+    $target_amount = floatval($_POST['target_amount'] ?? 0);
+    $deadline = !empty($_POST['deadline']) ? $_POST['deadline'] : null;
+    $current_amount = isset($_POST['current_amount']) ? floatval($_POST['current_amount']) : 0;
+    $status = 'Active';
+
+    if ($goal_name === '') {
+        sendResponse("error", "Goal name is required", 400);
+    }
+    if ($target_amount <= 0) {
+        sendResponse("error", "Target amount must be greater than zero", 400);
     }
 
-    // --- SCENARIO B: ADD SAVINGS TO GOAL ---
-    elseif ($action === 'add_money') {
-        $goal_id = intval($_POST['goal_id']);
-        $amount_to_add = floatval($_POST['amount']);
+    $stmt = $connection->prepare("INSERT INTO goals (user_id, goal_name, target_amount, current_amount, deadline, status) VALUES (?, ?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        sendResponse("error", "Database prepare error", 500);
+    }
 
-        // First, get current status
-        $checkQuery = $connection->prepare("SELECT current_amount, target_amount FROM goals WHERE goal_id = ? AND user_id = ?");
-        $checkQuery->bind_param("ii", $goal_id, $user_id);
-        $checkQuery->execute();
-        $result = $checkQuery->get_result();
-        
-        if ($row = $result->fetch_assoc()) {
-            $new_total = $row['current_amount'] + $amount_to_add;
-            $target = $row['target_amount'];
-            
-            // Auto-complete logic
-            $status = ($new_total >= $target) ? 'Achieved' : 'Active';
+    $stmt->bind_param("isddss", $user_id, $goal_name, $target_amount, $current_amount, $deadline, $status);
 
-            // Update the database
-            $updateStmt = $connection->prepare("UPDATE goals SET current_amount = ?, status = ? WHERE goal_id = ? AND user_id = ?");
-            $updateStmt->bind_param("dsii", $new_total, $status, $goal_id, $user_id);
-            
-            if ($updateStmt->execute()) {
-                $msg = ($status === 'Achieved') ? "Congrats! Goal Reached! 🎉" : "Savings added! Keep going.";
-                echo json_encode(["status" => "success", "message" => $msg]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Update failed"]);
-            }
+    if ($stmt->execute()) {
+        $stmt->close();
+        $connection->close();
+        sendResponse("success", "New goal set! Kayang-kaya yan.");
+    }
+
+    $stmt->close();
+    $connection->close();
+    sendResponse("error", "Failed to create goal", 500);
+}
+
+if ($action === 'add_money') {
+    $goal_id = intval($_POST['goal_id'] ?? 0);
+    $amount_to_add = floatval($_POST['amount'] ?? 0);
+
+    if ($goal_id <= 0 || $amount_to_add <= 0) {
+        sendResponse("error", "Invalid goal or amount", 400);
+    }
+
+    $checkQuery = $connection->prepare("SELECT current_amount, target_amount FROM goals WHERE goal_id = ? AND user_id = ?");
+    if (!$checkQuery) {
+        sendResponse("error", "Database prepare error", 500);
+    }
+
+    $checkQuery->bind_param("ii", $goal_id, $user_id);
+    $checkQuery->execute();
+    $result = $checkQuery->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $new_total = $row['current_amount'] + $amount_to_add;
+        $target = $row['target_amount'];
+        $new_status = ($new_total >= $target) ? 'Achieved' : 'Active';
+
+        $updateStmt = $connection->prepare("UPDATE goals SET current_amount = ?, status = ? WHERE goal_id = ? AND user_id = ?");
+        if (!$updateStmt) {
+            sendResponse("error", "Database prepare error", 500);
+        }
+
+        $updateStmt->bind_param("dsii", $new_total, $new_status, $goal_id, $user_id);
+
+        if ($updateStmt->execute()) {
+            $msg = ($new_status === 'Achieved') ? "Congrats! Goal Reached! 🎉" : "Savings added! Keep going.";
             $updateStmt->close();
-        } else {
-            echo json_encode(["status" => "error", "message" => "Goal not found"]);
+            $checkQuery->close();
+            $connection->close();
+            sendResponse("success", $msg);
         }
+
+        $updateStmt->close();
         $checkQuery->close();
+        $connection->close();
+        sendResponse("error", "Update failed", 500);
     }
 
-    // --- SCENARIO C: DELETE GOAL ---
-    elseif ($action === 'delete') {
-        $goal_id = intval($_POST['goal_id']);
+    $checkQuery->close();
+    $connection->close();
+    sendResponse("error", "Goal not found", 404);
+}
 
-        $stmt = $connection->prepare("DELETE FROM goals WHERE goal_id = ? AND user_id = ?");
-        $stmt->bind_param("ii", $goal_id, $user_id);
+if ($action === 'delete') {
+    $goal_id = intval($_POST['goal_id'] ?? 0);
 
-        if ($stmt->execute()) {
-            echo json_encode(["status" => "success", "message" => "Goal deleted."]);
-        } else {
-            echo json_encode(["status" => "error", "message" => "Could not delete goal."]);
-        }
+    if ($goal_id <= 0) {
+        sendResponse("error", "Invalid goal", 400);
+    }
+
+    $stmt = $connection->prepare("DELETE FROM goals WHERE goal_id = ? AND user_id = ?");
+    if (!$stmt) {
+        sendResponse("error", "Database prepare error", 500);
+    }
+
+    $stmt->bind_param("ii", $goal_id, $user_id);
+
+    if ($stmt->execute()) {
         $stmt->close();
+        $connection->close();
+        sendResponse("success", "Goal deleted.");
     }
 
-    // --- INVALID ACTION ---
-    else {
-        echo json_encode(["status" => "error", "message" => "Invalid action parameter"]);
+    $stmt->close();
+    $connection->close();
+    sendResponse("error", "Could not delete goal.", 500);
+}
+
+if ($action === 'update') {
+    $goal_id = intval($_POST['goal_id'] ?? 0);
+    $goal_name = trim($_POST['goal_name'] ?? '');
+    $target_amount = floatval($_POST['target_amount'] ?? 0);
+    $deadline = !empty($_POST['deadline']) ? $_POST['deadline'] : null;
+
+    if ($goal_id <= 0) {
+        sendResponse("error", "Invalid goal", 400);
     }
 
-} else {
-    echo json_encode(["status" => "error", "message" => "Invalid Request Method"]);
+    if ($goal_name === '') {
+        sendResponse("error", "Goal name is required", 400);
+    }
+
+    if ($target_amount <= 0) {
+        sendResponse("error", "Target amount must be greater than zero", 400);
+    }
+
+    $stmt = $connection->prepare("UPDATE goals SET goal_name = ?, target_amount = ?, deadline = ? WHERE goal_id = ? AND user_id = ?");
+    if (!$stmt) {
+        sendResponse("error", "Database prepare error", 500);
+    }
+
+    $stmt->bind_param("sdsii", $goal_name, $target_amount, $deadline, $goal_id, $user_id);
+
+    if ($stmt->execute()) {
+        $stmt->close();
+        $connection->close();
+        sendResponse("success", "Goal updated successfully!");
+    }
+
+    $stmt->close();
+    $connection->close();
+    sendResponse("error", "Failed to update goal.", 500);
 }
 
 $connection->close();
+sendResponse("error", "Invalid action parameter", 400);
 ?>
    

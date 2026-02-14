@@ -1,5 +1,5 @@
 <?php
-    include_once '../includes/connection.php';
+    require_once dirname(__DIR__) . '/includes/connection.php';
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }

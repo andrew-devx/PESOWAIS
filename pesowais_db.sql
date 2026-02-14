@@ -1,11 +1,10 @@
-CREATE DATABASE IF NOT EXISTS pesowais_db;
-USE pesowais_db;
 
 CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
+    username VARCHAR(50) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL, 
+    password VARCHAR(255) NOT NULL,
+    email_verified TINYINT(1) DEFAULT 0 NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -13,8 +12,8 @@ CREATE TABLE transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     type ENUM('Income', 'Expense') NOT NULL,
-    category VARCHAR(50) NOT NULL, -
-    amount DECIMAL(10,2) NOT NULL, -
+    category VARCHAR(50) NOT NULL, 
+    amount DECIMAL(10,2) NOT NULL, 
     description VARCHAR(255),
     transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -55,3 +54,13 @@ CREATE TABLE subscriptions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+CREATE TABLE budgets (
+    budget_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_category (user_id, category) 
+);
+

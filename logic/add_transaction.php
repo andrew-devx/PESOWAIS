@@ -1,7 +1,7 @@
 <?php
     header('Content-Type: application/json');
-    include  '../includes/connection.php';
-    include '../includes/auth_check.php';
+    require_once dirname(__DIR__) . '/includes/connection.php';
+    require_once dirname(__DIR__) . '/includes/auth_check.php';
     
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(["status" => "error", "message" => "Unauthorized"]);
@@ -15,6 +15,12 @@
         $category = $_POST['category'];
         $description = trim($_POST['description']);
         $date = $_POST['date'];
+
+        // Validate that category is not empty
+        if (empty($category)) {
+            echo json_encode(["status" => "error", "message" => "Category is required"]);
+            exit();
+        }
 
         $stmt = $connection->prepare("INSERT INTO transactions (user_id, amount, type, category, description, transaction_date) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("idssss", $user_id, $amount, $type, $category, $description, $date);

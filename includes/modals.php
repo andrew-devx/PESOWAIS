@@ -5,12 +5,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Add Expense</h2>
-            <button class="modal-close" onclick="document.getElementById('addExpenseModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="addExpenseModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleExpenseSubmit(event)">
+            <form id="addExpenseForm">
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select name="category" class="form-select" required>
@@ -40,11 +40,12 @@
                     <label class="form-label">Date</label>
                     <input type="date" name="date" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
                 </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addExpenseModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('addExpenseModal').close()">Cancel</button>
-            <button class="btn btn-primary" onclick="document.querySelector('#addExpenseModal form').dispatchEvent(new Event('submit'))">Add Expense</button>
         </div>
     </div>
 </dialog>
@@ -54,12 +55,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Add Income</h2>
-            <button class="modal-close" onclick="document.getElementById('addIncomeModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="addIncomeModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleIncomeSubmit(event)">
+            <form id="addIncomeForm">
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select name="category" class="form-select" required>
@@ -88,11 +89,12 @@
                     <label class="form-label">Date</label>
                     <input type="date" name="date" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
                 </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addIncomeModal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Income</button>
+                </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('addIncomeModal').close()">Cancel</button>
-            <button class="btn btn-success" onclick="document.querySelector('#addIncomeModal form').dispatchEvent(new Event('submit'))">Add Income</button>
         </div>
     </div>
 </dialog>
@@ -102,15 +104,15 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Add Debt/Loan</h2>
-            <button class="modal-close" onclick="document.getElementById('addUtangModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="addUtangModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleUtangSubmit(event)">
+            <form id="addUtangForm">
                 <div class="form-group">
                     <label class="form-label">Creditor/Debtor Name</label>
-                    <input type="text" class="form-input" placeholder="e.g., Best Friend, Mom" required>
+                    <input type="text" class="form-input" name="person_name" placeholder="e.g., Best Friend, Mom" required>
                 </div>
 
                 <div class="form-group">
@@ -129,23 +131,24 @@
 
                 <div class="form-group">
                     <label class="form-label">Amount (₱)</label>
-                    <input type="number" class="form-input" placeholder="0.00" step="0.01" required>
+                    <input type="number" name="amount" class="form-input" placeholder="0.00" step="0.01" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Due Date</label>
-                    <input type="date" class="form-input" required>
+                    <input type="date" name="due_date" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Notes (Optional)</label>
-                    <textarea class="form-textarea" placeholder="Add any notes..."></textarea>
+                    <textarea name="notes" class="form-textarea" placeholder="Add any notes..."></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addUtangModal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Add Debt</button>
                 </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('addUtangModal').close()">Cancel</button>
-            <button class="btn btn-warning" onclick="document.querySelector('#addUtangModal form').dispatchEvent(new Event('submit'))">Add Debt</button>
         </div>
     </div>
 </dialog>
@@ -155,12 +158,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Set Budget</h2>
-            <button class="modal-close" onclick="document.getElementById('setBudgetModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="setBudgetModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleBudgetSubmit(event)">
+            <form id="setBudgetForm">
                 <div class="form-group">
                     <label class="form-label">Category</label>
                     <select name="category" class="form-select" required>
@@ -180,11 +183,12 @@
                     <label class="form-label">Monthly Budget (₱)</label>
                     <input type="number" name="amount" class="form-input" placeholder="5000" step="0.01" required>
                 </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="setBudgetModal">Cancel</button>
+                    <button type="submit" class="btn btn-info">Set Budget</button>
+                </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('setBudgetModal').close()">Cancel</button>
-            <button class="btn btn-info" onclick="document.querySelector('#setBudgetModal form').dispatchEvent(new Event('submit'))">Set Budget</button>
         </div>
     </div>
 </dialog>
@@ -194,26 +198,28 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Create New Goal</h2>
-            <button class="modal-close" onclick="document.getElementById('addGoalModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="addGoalModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleGoalSubmit(event)">
+            <form id="addGoalForm">
                 <div class="form-group">
                     <label class="form-label">Goal Name</label>
-                    <input type="text" class="form-input" placeholder="e.g., Laptop" required>
+                    <input type="text" name="goal_name" class="form-input" placeholder="e.g., Laptop" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Target Amount (₱)</label>
-                    <input type="number" class="form-input" placeholder="50000" step="100" required>
+                    <input type="number" name="target_amount" class="form-input" placeholder="50000" step="0.01" min="0.01" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Target Date</label>
-                    <input type="date" class="form-input" required>
+                    <input type="date" name="deadline" class="form-input" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>" required>
                 </div>
+
+                <input type="hidden" name="current_amount" value="0">
 
                 <div class="form-group">
                     <label class="form-label">Priority</label>
@@ -232,11 +238,12 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addGoalModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Goal</button>
+                </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('addGoalModal').close()">Cancel</button>
-            <button class="btn btn-primary" onclick="document.querySelector('#addGoalModal form').dispatchEvent(new Event('submit'))">Create Goal</button>
         </div>
     </div>
 </dialog>
@@ -246,15 +253,15 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Add Subscription</h2>
-            <button class="modal-close" onclick="document.getElementById('addSubscriptionModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="addSubscriptionModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleSubscriptionSubmit(event)">
+            <form id="addSubscriptionForm">
                 <div class="form-group">
                     <label class="form-label">Select Service</label>
-                    <select class="form-select subscription-select" id="subscriptionService" required>
+                    <select class="form-select subscription-select" id="subscriptionService" name="service" required>
                         <option value="">Choose a subscription service</option>
                         <option value="spotify" data-icon="fab fa-spotify">🎵 Spotify</option>
                         <option value="netflix" data-icon="fas fa-play">📺 Netflix</option>
@@ -272,17 +279,17 @@
 
                 <div class="form-group" id="customServiceGroup" style="display: none;">
                     <label class="form-label">Service Name</label>
-                    <input type="text" class="form-input" id="customServiceName" placeholder="e.g., Gaming Subscription">
+                    <input type="text" class="form-input" id="customServiceName" name="custom_service" placeholder="e.g., Gaming Subscription">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Monthly Cost (₱)</label>
-                    <input type="number" class="form-input" placeholder="149.00" step="0.01" required>
+                    <input type="number" class="form-input" name="amount" placeholder="149.00" step="0.01" min="0.01" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Billing Day</label>
-                    <input type="number" class="form-input" placeholder="1-31" min="1" max="31" required>
+                    <input type="number" class="form-input" name="due_day" placeholder="1-31" min="1" max="31" required>
                 </div>
 
                 <div class="form-group">
@@ -301,18 +308,75 @@
 
                 <div class="form-group">
                     <label class="form-label">Last Payment Date (Optional)</label>
-                    <input type="date" class="form-input" id="lastPaymentDate">
+                    <input type="date" class="form-input" id="lastPaymentDate" name="last_payment_date" value="<?php echo date('Y-m-d'); ?>">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Notes (Optional)</label>
-                    <textarea class="form-textarea" placeholder="Add any notes..."></textarea>
+                    <textarea class="form-textarea" name="notes" placeholder="Add any notes..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addSubscriptionModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Subscription</button>
                 </div>
             </form>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('addSubscriptionModal').close()">Cancel</button>
-            <button class="btn btn-primary" onclick="document.querySelector('#addSubscriptionModal form').dispatchEvent(new Event('submit'))">Add Subscription</button>
+    </div>
+</dialog>
+
+<!-- Edit Subscription Modal -->
+<dialog id="editSubscriptionModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Subscription</h2>
+            <button class="modal-close modal-close-btn" data-modal="editSubscriptionModal">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="editSubscriptionForm">
+                <input type="hidden" name="service_name_original">
+                
+                <div class="form-group">
+                    <label class="form-label">Service Name</label>
+                    <input type="text" name="service_name" class="form-input" required disabled>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Monthly Cost (₱)</label>
+                    <input type="number" name="amount" class="form-input" step="0.01" min="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Billing Day</label>
+                    <input type="number" name="due_day" class="form-input" min="1" max="31" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="edit-sub-active" name="status" value="Active">
+                            <label for="edit-sub-active">Active</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="edit-sub-inactive" name="status" value="Inactive">
+                            <label for="edit-sub-inactive">Inactive</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Last Payment Date (Optional)</label>
+                    <input type="date" name="last_payment_date" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="editSubscriptionModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 </dialog>
@@ -321,7 +385,7 @@
 <dialog id="statusModal">
     <div class="modal-content">
         <div class="modal-header">
-            <button class="modal-close" onclick="closeStatusModal()">
+            <button class="modal-close modal-close-btn" data-modal="statusModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
@@ -331,7 +395,7 @@
             <p id="statusMessage" class="text-gray-600 max-w-sm"></p>
         </div>
         <div class="modal-footer">
-            <button id="statusBtn" class="btn btn-primary" onclick="closeStatusModal()">Close</button>
+            <button id="statusBtn" class="btn btn-primary modal-close-btn" data-modal="statusModal">Close</button>
         </div>
     </div>
 </dialog>
@@ -341,7 +405,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Confirm Delete</h2>
-            <button class="modal-close" onclick="document.getElementById('deleteConfirmModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="deleteConfirmModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
@@ -349,8 +413,8 @@
             <p id="deleteMessage" class="text-gray-700 text-center">Are you sure you want to delete this item? This action cannot be undone.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('deleteConfirmModal').close()">Cancel</button>
-            <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="deleteConfirmModal">Cancel</button>
+            <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
         </div>
     </div>
 </dialog>
@@ -360,12 +424,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Edit Transaction</h2>
-            <button class="modal-close" onclick="document.getElementById('editTransactionModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="editTransactionModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleEditTransactionSubmit(event)">
+            <form id="editTransactionForm">
                 <input type="hidden" id="editTransactionId" name="transaction_id">
                 
                 <div class="form-group">
@@ -401,13 +465,14 @@
 
                 <div class="form-group">
                     <label class="form-label">Date</label>
-                    <input type="date" id="editDate" name="date" class="form-input" required>
+                    <input type="date" id="editDate" name="date" class="form-input" value="<?php echo date('Y-m-d'); ?>" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="editTransactionModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('editTransactionModal').close()">Cancel</button>
-            <button class="btn btn-primary" onclick="document.querySelector('#editTransactionModal form').dispatchEvent(new Event('submit'))">Save Changes</button>
         </div>
     </div>
 </dialog>
@@ -417,12 +482,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Edit Budget</h2>
-            <button class="modal-close" onclick="document.getElementById('editBudgetModal').close()">
+            <button class="modal-close modal-close-btn" data-modal="editBudgetModal">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body">
-            <form onsubmit="handleEditBudgetSubmit(event)">
+            <form id="editBudgetForm">
                 <input type="hidden" id="editBudgetCategory" name="category">
                 
                 <div class="form-group">
@@ -434,12 +499,13 @@
                     <label class="form-label">Monthly Budget (₱)</label>
                     <input type="number" id="editBudgetAmount" name="amount" class="form-input" placeholder="5000" step="0.01" required>
                 </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="editBudgetModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-danger" id="deleteBudgetBtn">Delete Budget</button>
+                </div>
             </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="document.getElementById('editBudgetModal').close()">Cancel</button>
-            <button class="btn btn-primary" onclick="document.querySelector('#editBudgetModal form').dispatchEvent(new Event('submit'))">Save Changes</button>
-            <button class="btn btn-danger" onclick="deleteEditingBudget()">Delete Budget</button>
         </div>
     </div>
 </dialog>

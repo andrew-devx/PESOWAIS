@@ -9,5 +9,7 @@
     include 'includes/footer.php';
 ?>
 
+<script src="assets/js/scroll-animations.js"></script>
+
 
 

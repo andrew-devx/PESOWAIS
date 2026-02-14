@@ -1,6 +1,6 @@
 <?php
-    include  '../includes/connection.php';
-    include '../includes/auth_check.php';
+    require_once dirname(__DIR__) . '/includes/connection.php';
+    require_once dirname(__DIR__) . '/includes/auth_check.php';
 
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(["status" => "error", "message" => "Unauthorized"]);

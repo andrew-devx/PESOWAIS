@@ -3,14 +3,14 @@
         session_start();
     }
     
-    include_once '../includes/connection.php';
+    require_once dirname(__DIR__) . '/includes/connection.php';
     if(isset($_POST['loginBTN'])) {
 
-    $username = trim($_POST['username']); 
+    $email = trim($_POST['email']); 
     $password = $_POST['password'];
 
-    $stmt = $connection->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
+    $stmt = $connection->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -18,6 +18,12 @@
         $user = $result->fetch_assoc();
         
         if(password_verify($password, $user['password'])) {
+            // Check if email is verified
+            if($user['email_verified'] == 0) {
+                header("Location: ../login.php?error=email_not_verified&email=" . urlencode($user['email']));
+                exit();
+            }
+            
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
