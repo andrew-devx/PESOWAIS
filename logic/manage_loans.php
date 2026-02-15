@@ -71,20 +71,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    // --- 3. NEW: UPDATE STATUS (Mark Paid/Collected) ---
-    elseif ($action === 'update_status') {
+    // --- 3. NEW: ADD PAYMENT (Hulugan) ---
+    elseif ($action === 'add_payment') {
         $loan_id = intval($_POST['loan_id']);
-        $new_status = 'Paid'; // Match ENUM value in DB
+        $payment_amount = floatval($_POST['payment_amount']);
 
-        $stmt = $connection->prepare("UPDATE loans SET status = ? WHERE loan_id = ? AND user_id = ?");
-        $stmt->bind_param("sii", $new_status, $loan_id, $user_id);
+        if ($payment_amount <= 0) {
+            echo json_encode(["status" => "error", "message" => "Invalid payment amount."]);
+            exit();
+        }
 
-        if ($stmt->execute()) {
-            echo json_encode(["status" => "success", "message" => "Status updated!"]);
+        // 1. Get current loan details
+        $stmt = $connection->prepare("SELECT amount, paid_amount FROM loans WHERE loan_id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $loan_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $loan = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$loan) {
+            echo json_encode(["status" => "error", "message" => "Loan not found."]);
+            exit();
+        }
+
+        $current_paid = floatval($loan['paid_amount']);
+        $total_amount = floatval($loan['amount']);
+        $new_paid = $current_paid + $payment_amount;
+        
+        // Determine status
+        // Allow overpayment? For now, cap it or just mark as Paid if >= total.
+        $new_status = ($new_paid >= $total_amount) ? 'Paid' : 'Pending';
+
+        // 2. Update loan record
+        $updateStmt = $connection->prepare("UPDATE loans SET paid_amount = ?, status = ? WHERE loan_id = ? AND user_id = ?");
+        $updateStmt->bind_param("dsii", $new_paid, $new_status, $loan_id, $user_id);
+
+        if ($updateStmt->execute()) {
+            echo json_encode(["status" => "success", "message" => "Payment added!", "new_balance" => $total_amount - $new_paid, "status_code" => $new_status]);
         } else {
             echo json_encode(["status" => "error", "message" => "Update failed."]);
         }
-        $stmt->close();
+        $updateStmt->close();
     }
 
     // --- 4. UPDATE LOAN DETAILS ---

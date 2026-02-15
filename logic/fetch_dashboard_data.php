@@ -61,14 +61,15 @@ $txnStmt->close();
 
 // 5. Utang Tracker (Debts/Loans)
 $utangData = [];
-$utangStmt = $connection->prepare("SELECT person_name, amount, due_date FROM loans WHERE user_id = ? AND type = 'Payable' AND status = 'Pending' ORDER BY due_date ASC");
+$utangStmt = $connection->prepare("SELECT person_name, amount, paid_amount, due_date FROM loans WHERE user_id = ? AND type = 'Payable' AND status = 'Pending' ORDER BY due_date ASC");
 $utangStmt->bind_param("i", $user_id);
 $utangStmt->execute();
 $utangResult = $utangStmt->get_result();
 while ($row = $utangResult->fetch_assoc()) {
+    $remainingBalance = (float) $row['amount'] - (float) $row['paid_amount'];
     $utangData[] = [
         'creditor' => $row['person_name'],
-        'amount' => (float) $row['amount'],
+        'amount' => $remainingBalance,
         'dueDate' => $row['due_date'],
     ];
 }

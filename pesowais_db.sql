@@ -25,6 +25,7 @@ CREATE TABLE loans (
     person_name VARCHAR(100) NOT NULL, 
     type ENUM('Payable', 'Receivable') NOT NULL, 
     amount DECIMAL(10,2) NOT NULL,
+    paid_amount DECIMAL(10,2) DEFAULT 0.00,
     status ENUM('Pending', 'Paid') DEFAULT 'Pending',
     due_date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

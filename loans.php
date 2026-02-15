@@ -92,17 +92,30 @@ include 'logic/fetch_loans_data.php';
                             <div class="flex flex-col sm:flex-row sm:items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm hover:bg-red-100 transition-all">
                                 <div class="flex-1 min-w-0">
                                     <div class="font-semibold text-gray-900 truncate text-sm"><?php echo htmlspecialchars($loan['person_name']); ?></div>
-                                    <div class="text-xs text-gray-600 mt-1">
-                                        <i class="far fa-calendar-alt mr-1"></i><?php echo date('M d, Y', strtotime($loan['due_date'])); ?>
+                                    <div class="text-xs text-gray-600 mt-0.5">
+                                        <div class="flex justify-between mb-1">
+                                            <span>Paid: ₱<?php echo number_format($loan['paid_amount'], 2); ?></span>
+                                            <span>Total: ₱<?php echo number_format($loan['amount'], 2); ?></span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                            <?php 
+                                                $percent = ($loan['amount'] > 0) ? ($loan['paid_amount'] / $loan['amount']) * 100 : 0;
+                                                $percent = min(100, max(0, $percent));
+                                            ?>
+                                            <div class="bg-red-600 h-1.5 rounded-full transition-all duration-300" style="width: <?php echo $percent; ?>%"></div>
+                                        </div>
+                                        <div class="mt-1">
+                                            <i class="far fa-calendar-alt mr-1"></i><?php echo date('M d, Y', strtotime($loan['due_date'])); ?>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between sm:justify-end gap-2">
-                                    <span class="text-sm font-bold text-red-600">₱<?php echo number_format($loan['amount'], 2); ?></span>
                                     <div class="flex gap-1">
-                                        <button type="button" class="mark-paid-btn text-green-600 hover:text-green-800 p-1.5 hover:bg-green-100 rounded" 
-                                                title="Mark as Paid"
-                                                data-id="<?php echo $loan['loan_id']; ?>">
-                                            <i class="fas fa-check text-sm"></i>
+                                        <button type="button" class="add-payment-btn text-green-600 hover:text-green-800 p-1.5 hover:bg-green-100 rounded" 
+                                                title="Add Payment"
+                                                data-id="<?php echo $loan['loan_id']; ?>"
+                                                data-name="<?php echo htmlspecialchars($loan['person_name'], ENT_QUOTES); ?>">
+                                            <i class="fas fa-plus text-sm"></i>
                                         </button>
                                         <button type="button" class="edit-loan-btn text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-100 rounded" 
                                                 title="Edit"
@@ -140,36 +153,49 @@ include 'logic/fetch_loans_data.php';
                     <?php else: ?>
                         <?php foreach ($pendingLoans['receivable'] as $loan): ?>
                             <div class="flex flex-col sm:flex-row sm:items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3 text-sm hover:bg-green-100 transition-all">
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-semibold text-gray-900 truncate text-sm"><?php echo htmlspecialchars($loan['person_name']); ?></div>
-                                    <div class="text-xs text-gray-600 mt-1">
-                                        <i class="far fa-calendar-alt mr-1"></i><?php echo date('M d, Y', strtotime($loan['due_date'])); ?>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-gray-900 truncate text-sm"><?php echo htmlspecialchars($loan['person_name']); ?></div>
+                                        <div class="text-xs text-gray-600 mt-0.5">
+                                            <div class="flex justify-between mb-1">
+                                                <span>Paid: ₱<?php echo number_format($loan['paid_amount'], 2); ?></span>
+                                                <span>Total: ₱<?php echo number_format($loan['amount'], 2); ?></span>
+                                            </div>
+                                            <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                                <?php 
+                                                    $percent = ($loan['amount'] > 0) ? ($loan['paid_amount'] / $loan['amount']) * 100 : 0;
+                                                    $percent = min(100, max(0, $percent));
+                                                ?>
+                                                <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: <?php echo $percent; ?>%"></div>
+                                            </div>
+                                            <div class="mt-1">
+                                                <i class="far fa-calendar-alt mr-1"></i><?php echo date('M d, Y', strtotime($loan['due_date'])); ?>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex items-center justify-between sm:justify-end gap-2">
-                                    <span class="text-sm font-bold text-green-600">₱<?php echo number_format($loan['amount'], 2); ?></span>
-                                    <div class="flex gap-1">
-                                        <button type="button" class="mark-paid-btn text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-100 rounded" 
-                                                title="Mark as Paid"
-                                                data-id="<?php echo $loan['loan_id']; ?>">
-                                            <i class="fas fa-check text-sm"></i>
-                                        </button>
-                                        <button type="button" class="edit-loan-btn text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-100 rounded" 
-                                                title="Edit"
-                                                data-id="<?php echo $loan['loan_id']; ?>"
-                                                data-name="<?php echo htmlspecialchars($loan['person_name'], ENT_QUOTES); ?>"
-                                                data-type="Receivable"
-                                                data-amount="<?php echo $loan['amount']; ?>"
-                                                data-due="<?php echo $loan['due_date']; ?>">
-                                            <i class="fas fa-edit text-sm"></i>
-                                        </button>
-                                        <button type="button" class="delete-loan-btn text-red-600 hover:text-red-800 p-1.5 hover:bg-red-100 rounded" 
-                                                title="Delete"
-                                                data-id="<?php echo $loan['loan_id']; ?>">
-                                            <i class="fas fa-trash text-sm"></i>
-                                        </button>
+                                    <div class="flex items-center justify-between sm:justify-end gap-2">
+                                        <div class="flex gap-1">
+                                            <button type="button" class="add-payment-btn text-green-600 hover:text-green-800 p-1.5 hover:bg-green-100 rounded" 
+                                                    title="Add Payment"
+                                                    data-id="<?php echo $loan['loan_id']; ?>"
+                                                    data-name="<?php echo htmlspecialchars($loan['person_name'], ENT_QUOTES); ?>">
+                                                <i class="fas fa-plus text-sm"></i>
+                                            </button>
+                                            <button type="button" class="edit-loan-btn text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-100 rounded" 
+                                                    title="Edit"
+                                                    data-id="<?php echo $loan['loan_id']; ?>"
+                                                    data-name="<?php echo htmlspecialchars($loan['person_name'], ENT_QUOTES); ?>"
+                                                    data-type="<?php echo $loan['type']; ?>"
+                                                    data-amount="<?php echo $loan['amount']; ?>"
+                                                    data-due="<?php echo $loan['due_date']; ?>">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                            <button type="button" class="delete-loan-btn text-red-600 hover:text-red-800 p-1.5 hover:bg-red-100 rounded" 
+                                                    title="Delete"
+                                                    data-id="<?php echo $loan['loan_id']; ?>">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>

@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$stmt = $connection->prepare("SELECT loan_id, person_name, type, amount, due_date, status, created_at FROM loans WHERE user_id = ? ORDER BY status ASC, due_date ASC, created_at DESC");
+$stmt = $connection->prepare("SELECT loan_id, person_name, type, amount, paid_amount, due_date, status, created_at FROM loans WHERE user_id = ? ORDER BY status ASC, due_date ASC, created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -24,11 +24,12 @@ $paidLoans = [];
 
 foreach ($loans as $loan) {
     if ($loan['status'] === 'Pending') {
+        $remainingBalance = $loan['amount'] - $loan['paid_amount'];
         if ($loan['type'] === 'Payable') {
-            $totalPayable += $loan['amount'];
+            $totalPayable += $remainingBalance;
             $pendingLoans['payable'][] = $loan;
         } else {
-            $totalReceivable += $loan['amount'];
+            $totalReceivable += $remainingBalance;
             $pendingLoans['receivable'][] = $loan;
         }
     } else {

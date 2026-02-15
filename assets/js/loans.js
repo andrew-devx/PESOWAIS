@@ -308,6 +308,71 @@ document.addEventListener('DOMContentLoaded', function () {
       if (addCard) {
         openUtangModal();
       }
-    });
+
+      // Add Payment
+      const addPayBtn = e.target.closest('.add-payment-btn');
+      if (addPayBtn) {
+        const id = addPayBtn.dataset.id;
+        openPaymentModal(id);
+      }
+    }); // Close click listener
+  } // Close if statement
+}); // Close DOMContentLoaded
+
+// Open Add Payment Modal
+function openPaymentModal(loanId) {
+  const modal = document.getElementById('addLoanPaymentModal');
+  if (modal) {
+    document.getElementById('paymentLoanId').value = loanId;
+    document.getElementById('paymentAmount').value = '';
+    modal.showModal();
   }
-});
+}
+
+// Handle Add Payment Form Submission
+const addPaymentForm = document.getElementById('addLoanPaymentForm');
+if (addPaymentForm) {
+  addPaymentForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const loanId = document.getElementById('paymentLoanId').value;
+    const amount = document.getElementById('paymentAmount').value;
+
+    if (!amount || parseFloat(amount) <= 0) {
+      showStatusModal('error', 'Error', 'Please enter a valid amount.');
+      return;
+    }
+
+    const formData = new URLSearchParams({
+      action: 'add_payment',
+      loan_id: loanId,
+      payment_amount: amount
+    });
+
+    fetch('logic/manage_loans.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString()
+    })
+      .then(res => res.json())
+      .then(data => {
+        const modal = document.getElementById('addLoanPaymentModal');
+        if (modal) modal.close();
+
+        if (data.status === 'success') {
+          const message = data.status_code === 'Paid'
+            ? 'Loan fully paid! Moving to history.'
+            : 'Payment added successfully.';
+          showStatusModal('success', 'Payment Added', message);
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showStatusModal('error', 'Error', data.message || 'Failed to add payment.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showStatusModal('error', 'Error', 'Network error occurred.');
+      });
+  });
+}
+

@@ -510,4 +510,29 @@
     </div>
 </dialog>
 
+<!-- Add Loan Payment Modal -->
+<dialog id="addLoanPaymentModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>💰 Add Payment</h2>
+            <button class="modal-close modal-close-btn" data-modal="addLoanPaymentModal">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addLoanPaymentForm">
+                <input type="hidden" id="paymentLoanId" name="loan_id">
+                <div class="form-group">
+                    <label class="form-label">Amount to Pay (₱)</label>
+                    <input type="number" id="paymentAmount" name="payment_amount" class="form-input" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel-btn" data-modal="addLoanPaymentModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</dialog>
+
 <script src="assets/js/modals.js"></script>
