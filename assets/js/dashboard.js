@@ -88,14 +88,38 @@ document.addEventListener('DOMContentLoaded', () => {
         let filteredData = [];
         try {
             const response = await fetch(`logic/fetch_chart_data.php?timeframe=${encodeURIComponent(range)}`);
+
+            // Check if response is OK
+            if (!response.ok) {
+                console.error('HTTP error:', response.status, response.statusText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Check if response is actually JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Expected JSON but received:', contentType, 'Content:', text.substring(0, 200));
+                throw new Error('Server returned non-JSON response');
+            }
+
             const json = await response.json();
+
+            // Validate response structure
             if (json?.status === 'success' && Array.isArray(json.data)) {
                 filteredData = json.data;
+            } else if (json?.status === 'error') {
+                console.error('API Error:', json.message, json.debug || '');
+                // Show user-friendly message
+                alert(`Unable to load chart data: ${json.message}`);
+            } else {
+                console.error('Unexpected response format:', json);
             }
         } catch (err) {
             console.error('Failed to load chart data', err);
+            // Optionally show a user-friendly error message
+            console.warn('Chart will display with empty data. Please refresh the page or check your connection.');
         }
-
         if (cashflowChart) {
             cashflowChart.destroy();
         }

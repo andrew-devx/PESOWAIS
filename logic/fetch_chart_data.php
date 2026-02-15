@@ -1,12 +1,49 @@
 <?php
-    // 1. Tell browser this is JSON (Critical for Fetch)
-    header('Content-Type: application/json');
-
-    require_once dirname(__DIR__) . '/includes/connection.php';
-    require_once dirname(__DIR__) . '/includes/auth_check.php';
+    // 1. Prevent any HTML output before JSON
+    ob_start();
     
+    // 2. Tell browser this is JSON (Critical for Fetch)
+    header('Content-Type: application/json');
+    
+    // 3. Error handler to return JSON instead of HTML
+    set_error_handler(function($errno, $errstr, $errfile, $errline) {
+        ob_clean(); // Clear any previous output
+        echo json_encode([
+            "status" => "error", 
+            "message" => "Server error occurred",
+            "debug" => [
+                "error" => $errstr,
+                "file" => basename($errfile),
+                "line" => $errline
+            ]
+        ]);
+        exit();
+    });
+
+    // 4. Include required files with error checking
+    $rootDir = dirname(__DIR__);
+    $connectionFile = $rootDir . '/includes/connection.php';
+    $authFile = $rootDir . '/includes/auth_check.php';
+    
+    if (!file_exists($connectionFile)) {
+        ob_clean();
+        echo json_encode(["status" => "error", "message" => "Connection file not found"]);
+        exit();
+    }
+    
+    if (!file_exists($authFile)) {
+        ob_clean();
+        echo json_encode(["status" => "error", "message" => "Auth file not found"]);
+        exit();
+    }
+    
+    require_once $connectionFile;
+    require_once $authFile;
+    
+    // 5. Check session and authentication
     if (!isset($_SESSION['user_id'])) {
-        echo json_encode(["status" => "error", "message" => "Unauthorized"]);
+        ob_clean();
+        echo json_encode(["status" => "error", "message" => "Unauthorized - Please log in"]);
         exit();
     }
 
